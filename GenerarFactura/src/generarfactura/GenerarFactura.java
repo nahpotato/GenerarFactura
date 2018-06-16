@@ -1,21 +1,14 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package generarfactura;
 
-/**
- *
- * @author nahua
- */
+import generarfactura.controllers.GestorPedidos;
+import generarfactura.views.GenerarFacturaFrame;
+
 public class GenerarFactura {
 
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String[] args) {
-        // TODO code application logic here
+        GestorPedidos gestorPedidos = new GestorPedidos();
+        
+        GenerarFacturaFrame generarFacturaFrame = new GenerarFacturaFrame();
+        generarFacturaFrame.setVisible(true);
     }
-    
 }
