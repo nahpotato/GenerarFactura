@@ -6,6 +6,8 @@ import generarfactura.models.Pedido;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.event.WindowEvent;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -14,24 +16,24 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 
 public class GenerarFacturaFrame extends javax.swing.JFrame {
-    
+
     private final GestorPedidos gestorPedidos;
     private final List<Pedido> listaPedidos;
-    
+
     public GenerarFacturaFrame() {
         initComponents();
-        
+
         gestorPedidos = GestorPedidos.current;
         listaPedidos = gestorPedidos.getListaPedidos();
-        
+
         // DISEÑO TABLAS
         JTableHeader encabezado = tabla_clientes.getTableHeader();
-        encabezado.setForeground(new Color(193,39,45));
+        encabezado.setForeground(new Color(193, 39, 45));
         encabezado.setBackground(Color.white);
         JTableHeader encabezado2 = tabla_pedidos.getTableHeader();
-        encabezado2.setForeground(new Color(193,39,45));
+        encabezado2.setForeground(new Color(193, 39, 45));
         encabezado2.setBackground(Color.white);
-        
+
         // FUENTES
         CustomFont cf = new CustomFont();
         tfmontototal.setFont(cf.Chunkfive(Font.PLAIN, 26f));
@@ -43,11 +45,18 @@ public class GenerarFacturaFrame extends javax.swing.JFrame {
         tabla_clientes.setFont(cf.Antonio(Font.PLAIN, 13));
         jLabel4.setFont(cf.Chunkfive(Font.PLAIN, 27));
         jLabel2.setFont(cf.Antonio(Font.BOLD, 45));
-        
+
         rellenarTablaClientes();
-        
+
         btncerrar.addActionListener((ActionEvent ae) -> {
             this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
+        });
+
+        tabla_clientes.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent me) {
+                rellenarTablaPedidos();
+            }
         });
     }
 
@@ -126,13 +135,13 @@ public class GenerarFacturaFrame extends javax.swing.JFrame {
         tabla_pedidos.setForeground(new java.awt.Color(102, 102, 102));
         tabla_pedidos.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
-                {null, null, null, null, null, null},
-                {null, null, null, null, null, null},
-                {null, null, null, null, null, null},
-                {null, null, null, null, null, null}
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null},
+                {null, null, null, null, null}
             },
             new String [] {
-                "VARIEDAD", "TIPO", "TAMAÑO", "CANTIDAD", "PRECIO", "SUBTOTAL"
+                "NOMBRE", "TIPO", "VARIEDAD", "TAMAÑO", "PRECIO"
             }
         ));
         tabla_pedidos.setCursor(new java.awt.Cursor(java.awt.Cursor.HAND_CURSOR));
@@ -219,44 +228,97 @@ public class GenerarFacturaFrame extends javax.swing.JFrame {
             unaMatriz[i][2] = fechaToString(listaPedidos.get(i).getFechaCreacion());
             unaMatriz[i][3] = listaPedidos.get(i).getNombreCliente();
         }
-        
+
         tabla_clientes.setModel(new DefaultTableModel(
-            unaMatriz,
-            new String [] {
-                "NUMERO", "HORA", "FECHA", "CLIENTE"
-            }
+                unaMatriz,
+                new String[]{
+                    "NUMERO", "HORA", "FECHA", "CLIENTE"
+                }
         ) {
-            Class[] types = new Class [] {
-                java.lang.String.class, java.lang.String.class, java.lang.String.class, java.lang.String.class
+            Class[] types = new Class[]{
+                String.class, String.class, String.class, String.class
             };
-            boolean[] canEdit = new boolean [] {
+            boolean[] canEdit = new boolean[]{
                 false, false, false, false
             };
 
             @Override
             public Class getColumnClass(int columnIndex) {
-                return types [columnIndex];
+                return types[columnIndex];
             }
 
             @Override
             public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
+                return canEdit[columnIndex];
             }
         });
     }
-    
+
+    private void rellenarTablaPedidos() {
+        int index = tabla_clientes.getSelectedRow();
+
+        if (index == -1) {
+            return; // Cuando no está seleccionado ninguna fila, la función devuelve un -1
+        }
+        Pedido pedidoSeleccionado = null;
+
+        for (Pedido pedido : listaPedidos) {
+            if (Integer.toString(pedido.getNroPedido()).equals((String) tabla_clientes.getValueAt(index, 0))) {
+                pedidoSeleccionado = pedido;
+                break;
+            }
+        }
+
+        if (pedidoSeleccionado != null) {
+            String unaMatriz[][] = new String[pedidoSeleccionado.getDetallePedido().size()][5];
+            for (int i = 0; i < pedidoSeleccionado.getDetallePedido().size(); i++) {
+                unaMatriz[i][0] = pedidoSeleccionado.getDetallePedido().get(i).getNombre();
+                unaMatriz[i][1] = pedidoSeleccionado.getDetallePedido().get(i).getTipo();
+                unaMatriz[i][2] = pedidoSeleccionado.getDetallePedido().get(i).getVariedad();
+                unaMatriz[i][3] = Integer.toString(pedidoSeleccionado.getDetallePedido().get(i).getTamanio());
+                unaMatriz[i][4] = Double.toString(pedidoSeleccionado.getDetallePedido().get(i).getPrecioUnitario());
+            }
+
+            tabla_pedidos.setModel(new DefaultTableModel(
+                    unaMatriz,
+                    new String[]{
+                        "NOMBRE", "TIPO", "VARIEDAD", "TAMAÑO", "PRECIO"
+                    }
+            ) {
+                Class[] types = new Class[]{
+                    String.class, String.class, String.class, String.class, String.class
+                };
+                boolean[] canEdit = new boolean[]{
+                    false, false, false, false, false
+                };
+
+                @Override
+                public Class getColumnClass(int columnIndex) {
+                    return types[columnIndex];
+                }
+
+                @Override
+                public boolean isCellEditable(int rowIndex, int columnIndex) {
+                    return canEdit[columnIndex];
+                }
+            });
+        } else {
+            // Mostrar un bello cartel de error
+        }
+    }
+
     private String horaToString(LocalDateTime localDateTime) {
         return new StringBuilder()
                 .append(localDateTime.format(DateTimeFormatter.ofPattern("HH:mm")))
                 .toString();
     }
-    
+
     private String fechaToString(LocalDateTime localDateTime) {
         return new StringBuilder()
                 .append(localDateTime.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
                 .toString();
     }
-    
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btncancelar;
     private javax.swing.JButton btncerrar;
